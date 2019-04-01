@@ -52,4 +52,4 @@ class gestion_donnees:
         return self.X_entrainement, self.Y_entrainement, self.X_test
 
     def normaliser(self, dEntrainement):
-        
+        return self
