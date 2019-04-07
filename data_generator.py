@@ -32,7 +32,7 @@ class DataGenerator:
         train, labels, test, test_ids, classes = self.encode(train, test)
 
         # Split data sets (data sets are too large (990 * data_size))
-        sss = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=self.data_size, random_state=22)
+        sss = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=self.data_size, random_state=20)
         for train_index, test_index in sss.split(train, labels):
             x_train, x_test = train.values[train_index], train.values[test_index]
             t_train, t_test = labels[train_index], labels[test_index]

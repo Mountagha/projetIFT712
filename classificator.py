@@ -7,6 +7,7 @@
 
 import sys
 import numpy as np
+from sklearn.preprocessing import Normalizer
 import methods_classificator as mc
 import data_generator as gd
 
@@ -40,16 +41,20 @@ def main():
 #    m = int(sys.argv[6])
 #    lamb = float(sys.argv[7])
     method = 'SVC'
-    kernel = 'linear'
-    c = float(20)
+    kernel = 'rbf'
+    normalization = False
+    c = float(10)
     probability = True
-    r_hp = bool(0)   # Search for hyper-parameters
+    r_hp = bool(1)   # Search for hyper-parameters
     n_splits = int(10)
-    data_size = float(0.3)
+    data_size = float(0.1)
 
     # Create data generator and generate training and testing data
     data_generator = gd.DataGenerator(n_splits, data_size)
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
+    if normalization:
+        Normalizer().fit_transform(x_train)
+        Normalizer().fit_transform(x_test)
 
     # Entrainement du modele de regression
     classification = mc.Classification(method, kernel, c, probability)
@@ -63,18 +68,30 @@ def main():
     predictions_test = classification.prediction(x_test)
 
     # Calcul des erreurs
-    training_error = classification.error(t_train, predictions_train)
-    err_idx_train = t_train[np.nonzero(t_train-predictions_train)]
-    err_unique_idx_train = np.unique(err_idx_train)
+    training_error = classification.error(t_train, predictions_train) * 100
+    err_idx_train = t_train[np.nonzero((t_train)-(predictions_train))]
+    err_unique_idx_train = np.unique(err_idx_train) * 100
     testing_error = classification.error(t_test, predictions_test)
     err_idx_test = t_test[np.nonzero(t_test-predictions_test)]
     err_unique_idx_test = np.unique(err_idx_test)
 
+    # Normalize and replace 0 by 1e-15 (removes divergence problem if divided by prob) for submission file
+    #for i in range(len(predictions_test)):
+        #predictions_test = max(min(predictions_test[i], 1 - 1e-15), 1e-15)
+
     print("%%%%% Classifier : ", method, " %%%%%")
     if method == 'SVC':
+        kernel = classification.getParams('kernel')
         print(" - kernel = ", kernel)
-        print(" - C = ", "%.4f" % c)
-        print(" - probability = ", probability)
+        print(" - C = ", "%.4f" % classification.getParams('C'))
+        if kernel == 'poly':
+            print(" - degree = ", "%.4f" % classification.getParams('degree'))
+            print(" - coef0 = ", "%.4f" % classification.getParams('coef0'))
+        elif kernel == 'rbf':
+            print(" - gamma = ", "%.4f" % classification.getParams('gamma'))
+        elif kernel == 'sigmoid':
+            print(" - coef0 = ", "%.4f" % classification.getParams('coef0'))
+
 
     print('')
     print("Training error :", "%.2f" % training_error, "%")
