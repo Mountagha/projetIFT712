@@ -7,7 +7,6 @@
 
 import sys
 import numpy as np
-from sklearn.preprocessing import Normalizer
 import methods_classificator as mc
 import data_generator as gd
 
@@ -40,9 +39,9 @@ def main():
 #    data_size = float(sys.argv[4])
 #    m = int(sys.argv[6])
 #    lamb = float(sys.argv[7])
-    method = 'SVC'
+    method = 'LDA'
     kernel = 'rbf'
-    normalization = False
+    normalization = True
     c = float(10)
     probability = True
     r_hp = bool(1)   # Search for hyper-parameters
@@ -50,11 +49,8 @@ def main():
     data_size = float(0.1)
 
     # Create data generator and generate training and testing data
-    data_generator = gd.DataGenerator(n_splits, data_size)
+    data_generator = gd.DataGenerator(n_splits, data_size, normalization)
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
-    if normalization:
-        Normalizer().fit_transform(x_train)
-        Normalizer().fit_transform(x_test)
 
     # Entrainement du modele de regression
     classification = mc.Classification(method, kernel, c, probability)
@@ -69,9 +65,9 @@ def main():
 
     # Calcul des erreurs
     training_error = classification.error(t_train, predictions_train) * 100
-    err_idx_train = t_train[np.nonzero((t_train)-(predictions_train))]
-    err_unique_idx_train = np.unique(err_idx_train) * 100
-    testing_error = classification.error(t_test, predictions_test)
+    err_idx_train = t_train[np.nonzero(t_train-predictions_train)]
+    err_unique_idx_train = np.unique(err_idx_train)
+    testing_error = classification.error(t_test, predictions_test) * 100
     err_idx_test = t_test[np.nonzero(t_test-predictions_test)]
     err_unique_idx_test = np.unique(err_idx_test)
 
@@ -91,6 +87,8 @@ def main():
             print(" - gamma = ", "%.4f" % classification.getParams('gamma'))
         elif kernel == 'sigmoid':
             print(" - coef0 = ", "%.4f" % classification.getParams('coef0'))
+    if method == 'LDA':
+        print(" - solver = ", classification.getParams('solver'))
 
 
     print('')

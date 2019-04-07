@@ -7,14 +7,15 @@
 
 import os
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, Normalizer
 from sklearn.model_selection import StratifiedShuffleSplit
 
 
 class DataGenerator:
-    def __init__(self, n_splits, data_size):
+    def __init__(self, n_splits, data_size, norm):
         self.n_splits = n_splits
         self.data_size = data_size
+        self.norm = norm
 
     def generate_data(self):
         """
@@ -36,6 +37,11 @@ class DataGenerator:
         for train_index, test_index in sss.split(train, labels):
             x_train, x_test = train.values[train_index], train.values[test_index]
             t_train, t_test = labels[train_index], labels[test_index]
+
+        # Normalize data if asked by user
+        if self.norm:
+            Normalizer().fit_transform(x_train)
+            Normalizer().fit_transform(x_test)
 
         return x_train, t_train, x_test, t_test
 

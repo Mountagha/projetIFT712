@@ -80,8 +80,7 @@ class Classification:
                 c0_dist = np.linspace(best_rand_c0 - sweep_test, best_rand_c0 + sweep_test, n_test)
                 param_dist.update({'coef0': c0_dist})
         elif self.method == 'LDA':
-            param_dist = {'solver': ['svd', 'lsqr', 'eigen'],
-                          'shrinkage': ['None', 'auto']}
+            param_dist = {'solver': ['svd', 'lsqr', 'eigen']}
 
         # Search for hyperparameters
         cv = 2
@@ -102,6 +101,8 @@ class Classification:
             return self.classifier.best_estimator_.coef0
         elif param == 'degree':
             return self.classifier.best_estimator_.degree
+        elif param == 'solver':
+            return self.classifier.best_estimator_.solver
 
     def training(self, x_train, t_train):
         """
