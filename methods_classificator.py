@@ -29,33 +29,71 @@ class Classification:
         # Initialize classifier
         self.classifier = None
 
-        if method == 'SVC':
-            self.kernel = params[0]
-            self.C = params[1]
-            self.degree = params[2]
-            self.coef0 = params[3]
-            self.gamma = params[4]
-        elif method == 'LDA':
-            self.solver = params[0]
-        elif method == 'GaussianNB':
-            self.v_smoothing = params[0]
-        elif method == 'MultinomialNB':
-            self.alpha = params[0]
-        elif method == 'RF':
-            self.n_estimators = params[0]
-            self.max_features = params[1]
+        # Create classifier
+        param_to_send = {}
+        if params.__len__() > 0:
+            if method == 'SVC':
+                self.kernel = params[0]
+                self.C = params[1]
+                self.degree = params[2]
+                self.coef0 = params[3]
+                self.gamma = params[4]
+                self.classifier = SVC(kernel=self.kernel, C=self.C, degree=self.degree, coef0=self.coef0, gamma=self.gamma)
+            elif method == 'LDA':
+                self.solver = params[0]
+                self.classifier = LinearDiscriminantAnalysis(solver=self.solver)
+            elif method == 'GaussianNB':
+                self.v_smoothing = params[0]
+                self.classifier = GaussianNB()
+            elif method == 'MultinomialNB':
+                self.alpha = params[0]
+                self.classifier = MultinomialNB(alpha=self.alpha)
+            elif method == 'RF':
+                self.n_estimators = params[0]
+                self.max_features = params[1]
+                self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, max_features=self.max_features)
+        else:
+            if method == 'SVC':
+                self.classifier = SVC()
+            elif method == 'LDA':
+                self.classifier = LinearDiscriminantAnalysis()
+            elif method == 'GaussianNB':
+                self.classifier = GaussianNB()
+            elif method == 'MultinomialNB':
+                self.classifier = MultinomialNB()
+            elif method == 'RF':
+                self.classifier = RandomForestClassifier()
 
-        # Choose classifier
-        if self.method == 'SVC':
-            self.classifier = SVC(kernel=self.kernel, C=self.C, degree=self.degree, coef0=self.coef0, gamma=self.gamma)
-        elif self.method == 'LDA':
-            self.classifier = LinearDiscriminantAnalysis(solver=self.solver)
-        elif self.method == 'GaussianNB':
-            self.classifier = GaussianNB()
-        elif self.method == 'MultinomialNB':
-            self.classifier = MultinomialNB(alpha=self.alpha)
-        elif self.method == 'RF':
-            self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, max_features=self.max_features)
+    def training(self, x_train, t_train):
+        """
+
+        """
+        self.classifier.fit(x_train, t_train)
+
+    def prediction(self, x_test):
+        """
+
+        """
+        return self.classifier.predict(x_test)
+
+    def hyperparametre_research(self, X, t):
+        """
+
+        """
+        # Find a first approximation of hyperparameters with a randomsearch
+        param_dist = self.rand_distribution_hr()
+        random_search = RandomizedSearchCV(self.classifier, refit=True, param_distributions=param_dist,
+                                           n_iter=3, cv=3)
+        if self.method not in ['LDA', 'GaussianNB']:
+            random_search.fit(X, t)
+
+        # Fine tune research with a gridsearch
+        param_dist = self.grid_distribution_hr(random_search, 5, 5)
+        grid_search = GridSearchCV(self.classifier, param_grid=param_dist, cv=2)
+        grid_search.fit(X, t)
+
+        # Set new classifier as the gridsearch, since he is fitted and can predict data
+        self.set_params_hr(grid_search)
 
     def rand_distribution_hr(self):
         # LDA et GaussianNB n'ont pas besoin de recherche préliminaire
@@ -109,29 +147,7 @@ class Classification:
 
         return param_dist
 
-    def hyperparametre_research(self, X, t):
-        """
-
-        """
-        # Find a first approximation of hyperparameters with a randomsearch
-        param_dist = self.rand_distribution_hr()
-        random_search = RandomizedSearchCV(self.classifier, refit=True, param_distributions=param_dist,
-                                           n_iter=3, cv=3)
-        if self.method not in ['LDA', 'GaussianNB']:
-            random_search.fit(X, t)
-
-        # Fine tune research with a gridsearch
-        param_dist = self.grid_distribution_hr(random_search, 5, 5)
-        grid_search = GridSearchCV(self.classifier, param_grid=param_dist, cv=2)
-        grid_search.fit(X, t)
-
-        # Set new classifier as the gridsearch, since he is fitted and can predict data
-        self.set_params(grid_search)
-
-    def get_params(self, param):
-        return getattr(self, param)
-
-    def set_params(self, clf):
+    def set_params_hr(self, clf):
         self.classifier = clf
         if self.method == 'SVC':
             self.kernel = self.classifier.best_estimator_.kernel
@@ -143,29 +159,16 @@ class Classification:
             self.solver = self.classifier.best_estimator_.solver
         elif self.method == 'MultinomialNB':
             self.alpha = self.classifier.best_estimator_.alpha
+        elif self.method == 'RF':
+            self.n_estimators = self.classifier.best_estimator_.n_estimators
+            self.max_features = self.classifier.best_estimator_.max_features
 
-    def training(self, x_train, t_train):
-        """
-
-        """
-        # Train classifier
-        self.classifier.fit(x_train, t_train)
-
-    def prediction(self, x_test):
-        """
-
-        """
-        # Returns prediction a data set
-        prediction = self.classifier.predict(x_test)
-
-        return prediction
+    def get_params(self, param):
+        return getattr(self, param)
 
     @staticmethod
     def error(t, prediction):
         """
 
         """
-        # Calculate accuracy with sklearn metric function
-        acc_score = accuracy_score(t, prediction, normalize=True)
-
-        return (1 - acc_score)
+        return 1 - accuracy_score(t, prediction, normalize=True)

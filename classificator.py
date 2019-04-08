@@ -46,7 +46,7 @@ def main():
 
     # Params for SVC
     kernel = 'rbf'
-    c = float(10)
+    C = float(10)
     degree = float(5)
     coef0 = float(20)
     gamma = float(5)
@@ -73,7 +73,7 @@ def main():
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
 
     # Entrainement du modele de regression
-    # classification = mc.Classification(method, kernel, c, degree, coef0, gamma, solver, var_smoothing, alpha,
+    # classification = mc.Classification(method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
     #                                    n_estimators, max_features)
     classification = mc.Classification(method, n_estimators, max_features)
 
