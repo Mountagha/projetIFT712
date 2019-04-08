@@ -22,33 +22,28 @@ from sklearn.metrics import accuracy_score
 
 
 class Classification:
-    def __init__(self, method, kernel, c, degree, coef0, gamma, solver, var_smoothing, alpha, n_estimators,
-                 max_features):
+    def __init__(self, method, *params):
         # Method to use
         self.method = method
 
         # Initialize classifier
         self.classifier = None
 
-        # SVC method
-        self.kernel = kernel
-        self.C = c
-        self.degree = degree
-        self.coef0 = coef0
-        self.gamma = gamma
-
-        # LDA method
-        self.solver = solver
-
-        # Gaussian Naive Bayes (GaussianNB) method
-        self.v_smoothing = var_smoothing
-
-        # Multinomial Naive Bayes (MultinomialNB) method
-        self.alpha = alpha
-
-        # Random Forest (RF) method
-        self.n_estimators = n_estimators
-        self.max_features = max_features
+        if method == 'SVC':
+            self.kernel = params[0]
+            self.C = params[1]
+            self.degree = params[2]
+            self.coef0 = params[3]
+            self.gamma = params[4]
+        elif method == 'LDA':
+            self.solver = params[0]
+        elif method == 'GaussianNB':
+            self.v_smoothing = params[0]
+        elif method == 'MultinomialNB':
+            self.alpha = params[0]
+        elif method == 'RF':
+            self.n_estimators = params[0]
+            self.max_features = params[1]
 
         # Choose classifier
         if self.method == 'SVC':
@@ -63,6 +58,7 @@ class Classification:
             self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, max_features=self.max_features)
 
     def rand_distribution_hr(self):
+        # LDA et GaussianNB n'ont pas besoin de recherche préliminaire
         param_dist = {}
         if self.method == 'SVC':
             param_dist.update({'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],

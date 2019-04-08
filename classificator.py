@@ -20,25 +20,27 @@ def warning(erreur_test, erreur_apprentissage):
 
 
 def main():
+    # input: n_splits, data_size, normalization, r_hp, method, params...
+    # if sys.argv[5] not in ['SVC', 'LDA', 'GaussianNB', 'MultinomialNB', 'KNN', 'MLP']:
+    #     print('Classifier not implemented, choose between : [SVC, LDA, GaussianNB, MultinomialNB, KNN, MLP]')
+    #     return
+    # else:
+    #     if sys.argv[5] in ['LDA', 'GaussianNB', 'MultinomialNB'] and len(sys.argv) != 6:
+    #         print('Wrong numbre of input')
+    #         return
+    #     elif sys.argv[5] in ['RF'] and len(sys.argv) != 7:
+    #         print('Wrong numbre of input')
+    #         return
+    #     elif sys.argv[5] in ['SVC'] and len(sys.argv) != 10:
+    #         print('Wrong numbre of input')
+    #         return
 
-#    if len(sys.argv) < 8:
-#        print('Usage: python regression.py sk modele_gen nb_train nb_test bruit M lambda\n')
-#        print('\t sk=0: using_sklearn=False, sk=1: using_sklearn=True')
-#        print('\t modele_gen=lineaire, sin ou tanh')
-#        print('\t nb_train: nombre de donnees d'entrainement')
-#        print('\t nb_test: nombre de donnees de test')
-#        print('\t bruit: amplitude du bruit appliqué aux données')
-#        print('\t M: degré du polynome de la fonction de base (recherche d'hyperparametre lorsque M<0) ')
-#        print('\t lambda: lambda utilisé par le modele de Ridge\n')
-#        print(' exemple: python3 regression.py 1 sin 20 20 0.3 10 0.001\n')
-#        return
+    # n_splits = int(sys.argv[1])
+    # data_size = float(sys.argv[2])
+    # normalization = bool(sys.argv[3])
+    # r_hp = bool(sys.argv[4])
+    # method = sys.argv[5]
 
-#    method = sys.argv[1]
-#    r_hp = bool(sys.argv[2])
-#    n_splits = int(sys.argv[3])
-#    data_size = float(sys.argv[4])
-#    m = int(sys.argv[6])
-#    lamb = float(sys.argv[7])
     # Method (SVC, LDA, GaussianNB, MultinomialNB)
     method = 'RF'
 
@@ -61,7 +63,7 @@ def main():
     # Data generator parameters
     normalization = False
     n_splits = int(10)
-    data_size = float(0.5)
+    data_size = float(0.2)
 
     # Hyper parameters research
     r_hp = bool(1)
@@ -71,8 +73,10 @@ def main():
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
 
     # Entrainement du modele de regression
-    classification = mc.Classification(method, kernel, c, degree, coef0, gamma, solver, var_smoothing, alpha,
-                                       n_estimators, max_features)
+    # classification = mc.Classification(method, kernel, c, degree, coef0, gamma, solver, var_smoothing, alpha,
+    #                                    n_estimators, max_features)
+    classification = mc.Classification(method, n_estimators, max_features)
+
     if r_hp:
         classification.hyperparametre_research(x_train, t_train)
     else:
