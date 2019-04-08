@@ -22,15 +22,15 @@ def warning(erreur_test, erreur_apprentissage):
 def main():
 
 #    if len(sys.argv) < 8:
-#        print("Usage: python regression.py sk modele_gen nb_train nb_test bruit M lambda\n")
-#        print("\t sk=0: using_sklearn=False, sk=1: using_sklearn=True")
-#        print("\t modele_gen=lineaire, sin ou tanh")
-#        print("\t nb_train: nombre de donnees d'entrainement")
-#        print("\t nb_test: nombre de donnees de test")
-#        print("\t bruit: amplitude du bruit appliqué aux données")
-#        print("\t M: degré du polynome de la fonction de base (recherche d'hyperparametre lorsque M<0) ")
-#        print("\t lambda: lambda utilisé par le modele de Ridge\n")
-#        print(" exemple: python3 regression.py 1 sin 20 20 0.3 10 0.001\n")
+#        print('Usage: python regression.py sk modele_gen nb_train nb_test bruit M lambda\n')
+#        print('\t sk=0: using_sklearn=False, sk=1: using_sklearn=True')
+#        print('\t modele_gen=lineaire, sin ou tanh')
+#        print('\t nb_train: nombre de donnees d'entrainement')
+#        print('\t nb_test: nombre de donnees de test')
+#        print('\t bruit: amplitude du bruit appliqué aux données')
+#        print('\t M: degré du polynome de la fonction de base (recherche d'hyperparametre lorsque M<0) ')
+#        print('\t lambda: lambda utilisé par le modele de Ridge\n')
+#        print(' exemple: python3 regression.py 1 sin 20 20 0.3 10 0.001\n')
 #        return
 
 #    method = sys.argv[1]
@@ -39,21 +39,40 @@ def main():
 #    data_size = float(sys.argv[4])
 #    m = int(sys.argv[6])
 #    lamb = float(sys.argv[7])
-    method = 'LDA'
+    # Method (SVC, LDA, GaussianNB, MultinomialNB)
+    method = 'RF'
+
+    # Params for SVC
     kernel = 'rbf'
-    normalization = True
     c = float(10)
-    probability = True
-    r_hp = bool(1)   # Search for hyper-parameters
+    degree = float(5)
+    coef0 = float(20)
+    gamma = float(5)
+    # Params for LDA
+    solver = 'svd'
+    # Params for Gaussian Naive Bayes (GaussianNB)
+    var_smoothing = float(1e-9)
+    # Params for Multinomial Naive Bayes (MultinomialNB)
+    alpha = float(0)
+    # Params for Random Forest (RF)
+    n_estimators = int(100)
+    max_features = 'auto'
+
+    # Data generator parameters
+    normalization = False
     n_splits = int(10)
-    data_size = float(0.1)
+    data_size = float(0.5)
+
+    # Hyper parameters research
+    r_hp = bool(1)
 
     # Create data generator and generate training and testing data
     data_generator = gd.DataGenerator(n_splits, data_size, normalization)
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
 
     # Entrainement du modele de regression
-    classification = mc.Classification(method, kernel, c, probability)
+    classification = mc.Classification(method, kernel, c, degree, coef0, gamma, solver, var_smoothing, alpha,
+                                       n_estimators, max_features)
     if r_hp:
         classification.hyperparametre_research(x_train, t_train)
     else:
@@ -75,32 +94,39 @@ def main():
     #for i in range(len(predictions_test)):
         #predictions_test = max(min(predictions_test[i], 1 - 1e-15), 1e-15)
 
-    print("%%%%% Classifier : ", method, " %%%%%")
+    print('%%%%% Classifier : ', method, ' %%%%%')
     if method == 'SVC':
-        kernel = classification.getParams('kernel')
-        print(" - kernel = ", kernel)
-        print(" - C = ", "%.4f" % classification.getParams('C'))
+        kernel = classification.get_params('kernel')
+        print(' - kernel = ', kernel)
+        print(' - C = ', '%.4f' % classification.get_params('C'))
         if kernel == 'poly':
-            print(" - degree = ", "%.4f" % classification.getParams('degree'))
-            print(" - coef0 = ", "%.4f" % classification.getParams('coef0'))
+            print(' - degree = ', '%.4f' % classification.get_params('degree'))
+            print(' - coef0 = ', '%.4f' % classification.get_params('coef0'))
         elif kernel == 'rbf':
-            print(" - gamma = ", "%.4f" % classification.getParams('gamma'))
+            print(' - gamma = ', '%.4f' % classification.get_params('gamma'))
         elif kernel == 'sigmoid':
-            print(" - coef0 = ", "%.4f" % classification.getParams('coef0'))
+            print(' - coef0 = ', '%.4f' % classification.get_params('coef0'))
     if method == 'LDA':
-        print(" - solver = ", classification.getParams('solver'))
+        print(' - solver = ', classification.get_params('solver'))
+    if method == 'GaussianNB':
+        print(' - var_smoothing = ,', classification.get_params('v_smoothing'))
+    if method == 'MultinomialNB':
+        print(' - alpha = ', classification.get_params('alpha'))
+    if method == 'RF':
+        print(' - n_estimators = ', classification.get_params('n_estimators'))
+        print(' - max_features = ', classification.get_params('max_features'))
 
 
     print('')
-    print("Training error :", "%.2f" % training_error, "%")
-    print("# of training error : ", "%.2f" % len(err_idx_train))
-    print("# of classes error : ", "%.2f" % len(err_unique_idx_train), "\n")
-    print("Testing error :", "%.2f" % testing_error, "%")
-    print("# of testing error : ", "%.2f" % len(err_idx_test))
-    print("# of classes error : ", "%.2f" % len(err_unique_idx_test))
+    print('Training error :', '%.2f' % training_error, '%')
+    print('# of training error : ', '%.2f' % len(err_idx_train))
+    print('# of classes error : ', '%.2f' % len(err_unique_idx_train), '\n')
+    print('Testing error :', '%.2f' % testing_error, '%')
+    print('# of testing error : ', '%.2f' % len(err_idx_test))
+    print('# of classes error : ', '%.2f' % len(err_unique_idx_test))
 
     warning(testing_error, training_error)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
