@@ -40,9 +40,10 @@ def main():
     # normalization = bool(sys.argv[3])
     # r_hp = bool(sys.argv[4])
     # method = sys.argv[5]
+    # params = sys.argv[5:-1]
 
     # Method (SVC, LDA, GaussianNB, MultinomialNB)
-    method = 'RF'
+    method = 'KNN'
 
     # Params for SVC
     kernel = 'rbf'
@@ -59,6 +60,10 @@ def main():
     # Params for Random Forest (RF)
     n_estimators = int(100)
     max_features = 'auto'
+    # Params for KNN
+    n_neighbors = int(5)
+    weights = 'uniform'
+    leaf_size = int(30)
 
     # Data generator parameters
     normalization = False
@@ -67,20 +72,20 @@ def main():
 
     # Hyper parameters research
     r_hp = bool(1)
+    n_iter_rs = int(3)
+    cv_rs = int(3)
+    cs_gs = int(2)
 
     # Create data generator and generate training and testing data
     data_generator = gd.DataGenerator(n_splits, data_size, normalization)
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
 
     # Entrainement du modele de regression
-    # classification = mc.Classification(method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
+    # classification = mc.Classification(r_hp, method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
     #                                    n_estimators, max_features)
-    classification = mc.Classification(method, n_estimators, max_features)
+    classification = mc.Classification(r_hp, method, n_neighbors, weights, leaf_size)
 
-    if r_hp:
-        classification.hyperparametre_research(x_train, t_train)
-    else:
-        classification.training(x_train, t_train)
+    classification.training(x_train, t_train)
 
     # Predictions sur les ensembles d'entrainement et de test
     predictions_train = classification.prediction(x_train)
@@ -119,6 +124,10 @@ def main():
     if method == 'RF':
         print(' - n_estimators = ', classification.get_params('n_estimators'))
         print(' - max_features = ', classification.get_params('max_features'))
+    if method == 'KNN':
+        print(' - n_neighbors = ', classification.get_params('n_neighbors'))
+        print(' - weights = ', classification.get_params('weights'))
+        print(' - leaf_size = ', classification.get_params('leaf_size'))
 
 
     print('')

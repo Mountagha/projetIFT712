@@ -15,6 +15,7 @@ from sklearn.svm import SVC
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 # sklearn tools
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
@@ -22,23 +23,24 @@ from sklearn.metrics import accuracy_score
 
 
 class Classification:
-    def __init__(self, method, *params):
-        # Method to use
+    def __init__(self, r_hp, method, *params):
+        # Method to use and r_hp
+        self.r_hp = r_hp
         self.method = method
 
         # Initialize classifier
         self.classifier = None
 
         # Create classifier
-        param_to_send = {}
-        if params.__len__() > 0:
+        if not r_hp > 0:
             if method == 'SVC':
                 self.kernel = params[0]
                 self.C = params[1]
                 self.degree = params[2]
                 self.coef0 = params[3]
                 self.gamma = params[4]
-                self.classifier = SVC(kernel=self.kernel, C=self.C, degree=self.degree, coef0=self.coef0, gamma=self.gamma)
+                self.classifier = SVC(kernel=self.kernel, C=self.C, degree=self.degree, coef0=self.coef0,
+                                      gamma=self.gamma)
             elif method == 'LDA':
                 self.solver = params[0]
                 self.classifier = LinearDiscriminantAnalysis(solver=self.solver)
@@ -52,7 +54,16 @@ class Classification:
                 self.n_estimators = params[0]
                 self.max_features = params[1]
                 self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, max_features=self.max_features)
+            elif method == 'KNN':
+                self.n_neighbors = params[0]
+                self.weights = params[1]
+                self.leaf_size = params[2]
+                self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights,
+                                                       leaf_size=self.leaf_size)
         else:
+            self.n_iter_rs = params[0]
+            self.cv_rs = params[1]
+            self.cv_gs = params[2]
             if method == 'SVC':
                 self.classifier = SVC()
             elif method == 'LDA':
@@ -63,12 +74,17 @@ class Classification:
                 self.classifier = MultinomialNB()
             elif method == 'RF':
                 self.classifier = RandomForestClassifier()
+            elif method == 'KNN':
+                self.classifier = KNeighborsClassifier()
 
     def training(self, x_train, t_train):
         """
 
         """
-        self.classifier.fit(x_train, t_train)
+        if self.r_hp:
+            self.hyperparametre_research(x_train, t_train)
+        else:
+            self.classifier.fit(x_train, t_train)
 
     def prediction(self, x_test):
         """
@@ -109,6 +125,10 @@ class Classification:
         elif self.method == 'RF':
             param_dist.update({'n_estimators': sp_randint(10, 100),
                                'max_features': ['log2', 'sqrt', 1.0]})
+        elif self.method == 'KNN':
+            param_dist.update({'n_neighbors': sp_randint(5, 30),
+                               'weights': ['uniform', 'distance'],
+                               'leaf_size': sp_randint(10, 50)})
 
         return param_dist
 
@@ -141,9 +161,17 @@ class Classification:
             param_dist.update({'alpha': np.linspace(np.max([0, best_rand_alpha - 1]), best_rand_alpha + 1, n_test)})
         elif self.method == 'RF':
             best_rand_n = rs.best_estimator_.get_params()['n_estimators']
-            param_dist.update({
-                'n_estimators': np.linspace(np.max([10, best_rand_n - sweep_test]), best_rand_n + sweep_test, n_test, dtype=int),
-                'max_features': [rs.best_estimator_.get_params()['max_features']]})
+            param_dist.update({'n_estimators': np.linspace(np.max([10, best_rand_n - sweep_test]),
+                                                           best_rand_n + sweep_test, n_test, dtype=int),
+                               'max_features': [rs.best_estimator_.get_params()['max_features']]})
+        elif self.method == 'KNN':
+            best_rand_n = rs.best_estimator_.get_params()['n_neighbors']
+            best_rand_ls = rs.best_estimator_.get_params()['leaf_size']
+            param_dist.update({'n_neighbors': np.linspace(np.max([2, best_rand_n - sweep_test]),
+                                                           best_rand_n + sweep_test, n_test, dtype=int),
+                               'weights': [rs.best_estimator_.get_params()['weights']],
+                               'leaf_size': np.linspace(np.max([2, best_rand_ls - sweep_test]),
+                                                        best_rand_ls + sweep_test, n_test, dtype=int)})
 
         return param_dist
 
@@ -162,6 +190,10 @@ class Classification:
         elif self.method == 'RF':
             self.n_estimators = self.classifier.best_estimator_.n_estimators
             self.max_features = self.classifier.best_estimator_.max_features
+        elif self.method == 'KNN':
+            self.n_neighbors = self.classifier.best_estimator_.n_neighbors
+            self.weights = self.classifier.best_estimator_.weights
+            self.leaf_size = self.classifier.best_estimator_.leaf_size
 
     def get_params(self, param):
         return getattr(self, param)
