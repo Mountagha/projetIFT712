@@ -86,10 +86,19 @@ class LinearClassifier(object):
 
          Returns a class label for each sample (a number between 0 and num_classes-1)
         """
+        if self.bias:
+            X_shape = X.shape[0] if len(X.shape)==1 else X.shape[0]
+            if self.W.shape[0] != X_shape: #if not X augment yet do it
+                X = augment(X)
         class_label = np.zeros(X.shape[0])
-        y = np.dot(self.W, X)
-        prediction = np.exp(y)/np.sum(np.exp(y))
-        class_label = np.argmax(prediction)
+        if len(X.shape) == 1:
+            y = np.dot(self.W, X)
+            prediction = np.exp(y)/np.sum(np.exp(y))
+            class_label = np.argmax(prediction)
+        else:
+            all_y = np.dot(X, self.W)
+            all_prediction = np.exp(all_y)/np.sum(np.exp(all_y))
+            class_label = np.array([np.argmax(all_prediction[i]) for i in range(X.shape[0])])
         #############################################################################
         # TODO: Return the best class label.                                        #
         #############################################################################
@@ -123,10 +132,14 @@ class LinearClassifier(object):
             #loss += loss_x
             #loss_element, grad = self.cross_entropy_loss(x, x_label, reg)
             loss += loss_x
-            sm_x = np.dot(self.W.T, X[i])
-            sm_x = np.exp(sm_x)
-            sm_x = sm_x / np.sum(sm_x)
+            scores = np.dot(self.W.T, X[i])
+            #sm_x = np.dot(self.W.T, X[i])
+            #sm_x = np.exp(sm_x)
+            #sm_x = sm_x / np.sum(sm_x)
+            sm_x = np.exp(scores)/np.sum(np.exp(scores))
+            #prediction = self.predict(X[i])
             if np.argmax(sm_x) == y[i]:
+            #if prediction == y[i]:
                 accu += 1.0
             #print("(x,y) ({}, {})".format(self.predict(X[i]),y[i]))
             #accu += int(self.predict(X[i])==y[i])
@@ -158,22 +171,21 @@ class LinearClassifier(object):
         """
         loss = 0.0
         dW = np.zeros((self.num_classes))
-#         scores = np.dot(self.W, x)
-#         softmax = np.exp(scores)/np.sum(np.exp(scores))
-#         loss = -np.log(softmax[y])
-#         tn[y] = 1
-#         tn = softmax - tn
-#         dW = np.dot(x.reshape(np.size(x),-1), tn.reshape(-1, np.size(softmax)))
-        softmax = np.dot(self.W.T, x)
-        softmax = np.exp(softmax)
-        softmax = softmax / np.sum(softmax)
-        loss = -1 * np.log(softmax[y]) + reg * np.linalg.norm(self.W) * np.linalg.norm(self.W)/2
-        #loss = -1 * np.log(softmax[y])
-        d, c = self.W.shape
-        t = np.zeros((c))
+
+        #softmax = np.dot(self.W.T, x)
+        #softmax = np.exp(softmax)
+        #softmax = softmax / np.sum(softmax)
+        scores = np.dot(self.W.T, x)
+        softmax = np.exp(scores)/np.sum(np.exp(scores))
+        loss = -np.log(softmax[y]) + reg * np.linalg.norm(self.W**2)/2
+
+        #d, c = self.W.shape
+        #t = np.zeros((c))
+        t = np.zeros(self.num_classes)
         t[y] = 1.0
-        t = softmax - t
-        dW = np.dot(x.reshape(len(x),-1),t.reshape(-1, len(t)))
+        #t = softmax - t
+        #dW = np.dot(x.reshape(len(x),-1),t.reshape(-1, len(t)))
+        dW = np.dot(x.reshape(np.size(x),-1), (softmax-t).reshape(-1, np.size(softmax)))
         dW += reg * self.W
         #print("dW Mamadou {}".format(dW))
         #print("tn-softmax {}".format(softmax-tn))
