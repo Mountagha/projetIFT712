@@ -16,6 +16,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 
 # sklearn tools
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
@@ -60,6 +61,13 @@ class Classification:
                 self.leaf_size = params[2]
                 self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights,
                                                        leaf_size=self.leaf_size)
+            elif metod == 'MLP':
+                self.layers = params[0]
+                self.alpha = params[1]
+                self.learning_rate_init = params[2]
+                self.classifier = MLPClassifier(hidden_layers_sizes=self.hidden_layers, alpha=self.alpha, learning_rate_init
+                                                learning_rate_init=self.learning_rate_init)
+
         else:
             self.n_iter_rs = params[0]
             self.cv_rs = params[1]
@@ -76,6 +84,8 @@ class Classification:
                 self.classifier = RandomForestClassifier()
             elif method == 'KNN':
                 self.classifier = KNeighborsClassifier()
+            elif method == 'MLP':
+                self.classifier = MLPClassifier()
 
     def training(self, x_train, t_train):
         """
@@ -129,7 +139,10 @@ class Classification:
             param_dist.update({'n_neighbors': sp_randint(5, 30),
                                'weights': ['uniform', 'distance'],
                                'leaf_size': sp_randint(10, 50)})
-
+        elif self.method == 'MLP':
+            param_dist.update({'hidden_layers_sizes':[(10,20,10),(20,40,20)],
+                                'alpha':[1e-4, 1e-3, 1e-2, 0.0001],
+                                'learning_rate_init':[0.001,0.003,0.01]})
         return param_dist
 
     def grid_distribution_hr(self, rs, sweep_test, n_test):
@@ -172,6 +185,14 @@ class Classification:
                                'weights': [rs.best_estimator_.get_params()['weights']],
                                'leaf_size': np.linspace(np.max([2, best_rand_ls - sweep_test]),
                                                         best_rand_ls + sweep_test, n_test, dtype=int)})
+        elif self.method == 'MLP':
+            best_hidden_layers = rs.best_estimator_.get_params()['hidden_layers_sizes']
+            best_alpha = rs.best_estimator_.get_params()['alpha']
+            best_learning_rate_init = rs.best_estimator_.get_params()['learning_rate_init']
+            param_dist.update({'hidden_layers_sizes':best_hidden_layers,
+                                'alpha':best_alpha,
+                                'learning_rate_init': best_hidden_layers
+            })
 
         return param_dist
 
@@ -194,6 +215,10 @@ class Classification:
             self.n_neighbors = self.classifier.best_estimator_.n_neighbors
             self.weights = self.classifier.best_estimator_.weights
             self.leaf_size = self.classifier.best_estimator_.leaf_size
+        elif self.method == 'MLP':
+            self.hidden_layers_sizes = self.classifier.best_estimator_.hidden_layers_sizes
+            self.alpha = self.classifier.best_estimator_.alpha
+            self.learning_rate_init = self.classifier.best_estimator_.learning_rate_init
 
     def get_params(self, param):
         return getattr(self, param)
