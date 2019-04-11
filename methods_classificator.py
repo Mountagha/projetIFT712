@@ -61,12 +61,12 @@ class Classification:
                 self.leaf_size = params[2]
                 self.classifier = KNeighborsClassifier(n_neighbors=self.n_neighbors, weights=self.weights,
                                                        leaf_size=self.leaf_size)
-            elif metod == 'MLP':
-                self.layers = params[0]
-                self.alpha = params[1]
-                self.learning_rate_init = params[2]
-                self.classifier = MLPClassifier(hidden_layers_sizes=self.hidden_layers, alpha=self.alpha, learning_rate_init
-                                                learning_rate_init=self.learning_rate_init)
+            elif method == 'MLP':
+                self.hidden_layer_sizes = params[0]
+                self.activation = params[1]
+                self.alpha = params[2]
+                self.classifier = MLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes, activation=self.activation,
+                                                alpha=self.alpha, max_iter=500)
 
         else:
             self.n_iter_rs = params[0]
@@ -85,7 +85,7 @@ class Classification:
             elif method == 'KNN':
                 self.classifier = KNeighborsClassifier()
             elif method == 'MLP':
-                self.classifier = MLPClassifier()
+                self.classifier = MLPClassifier(max_iter=500)
 
     def training(self, x_train, t_train):
         """
@@ -140,9 +140,9 @@ class Classification:
                                'weights': ['uniform', 'distance'],
                                'leaf_size': sp_randint(10, 50)})
         elif self.method == 'MLP':
-            param_dist.update({'hidden_layers_sizes':[(10,20,10),(20,40,20)],
-                                'alpha':[1e-4, 1e-3, 1e-2, 0.0001],
-                                'learning_rate_init':[0.001,0.003,0.01]})
+            param_dist.update({'hidden_layer_sizes': [(30, 30), (40, 40), (50, 50), (50, 30), (50, 20)],
+                               'activation': ['identity', 'logistic', 'tanh', 'relu'],
+                               'alpha': sp_uniform(1e-5, 1e-1)})
         return param_dist
 
     def grid_distribution_hr(self, rs, sweep_test, n_test):
@@ -186,13 +186,10 @@ class Classification:
                                'leaf_size': np.linspace(np.max([2, best_rand_ls - sweep_test]),
                                                         best_rand_ls + sweep_test, n_test, dtype=int)})
         elif self.method == 'MLP':
-            best_hidden_layers = rs.best_estimator_.get_params()['hidden_layers_sizes']
             best_alpha = rs.best_estimator_.get_params()['alpha']
-            best_learning_rate_init = rs.best_estimator_.get_params()['learning_rate_init']
-            param_dist.update({'hidden_layers_sizes':best_hidden_layers,
-                                'alpha':best_alpha,
-                                'learning_rate_init': best_hidden_layers
-            })
+            param_dist.update({'hidden_layer_sizes': [rs.best_estimator_.get_params()['hidden_layer_sizes']],
+                               'activation': [rs.best_estimator_.get_params()['activation']],
+                               'alpha': np.linspace(np.max([1e-5, best_alpha/5]), best_alpha*5, n_test)})
 
         return param_dist
 
@@ -216,9 +213,9 @@ class Classification:
             self.weights = self.classifier.best_estimator_.weights
             self.leaf_size = self.classifier.best_estimator_.leaf_size
         elif self.method == 'MLP':
-            self.hidden_layers_sizes = self.classifier.best_estimator_.hidden_layers_sizes
+            self.hidden_layer_sizes = self.classifier.best_estimator_.hidden_layer_sizes
+            self.activation = self.classifier.best_estimator_.activation
             self.alpha = self.classifier.best_estimator_.alpha
-            self.learning_rate_init = self.classifier.best_estimator_.learning_rate_init
 
     def get_params(self, param):
         return getattr(self, param)

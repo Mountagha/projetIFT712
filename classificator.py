@@ -43,7 +43,7 @@ def main():
     # params = sys.argv[5:-1]
 
     # Method (SVC, LDA, GaussianNB, MultinomialNB)
-    method = 'KNN'
+    method = 'MLP'
 
     # Params for SVC
     kernel = 'rbf'
@@ -64,6 +64,10 @@ def main():
     n_neighbors = int(5)
     weights = 'uniform'
     leaf_size = int(30)
+    # Params for MLP
+    hidden_layers_sizes = (50, 50)
+    activation = 'tanh'
+    alpha = 1e-3
 
     # Data generator parameters
     normalization = False
@@ -71,7 +75,7 @@ def main():
     data_size = float(0.2)
 
     # Hyper parameters research
-    r_hp = bool(1)
+    r_hp = True
     n_iter_rs = int(3)
     cv_rs = int(3)
     cs_gs = int(2)
@@ -83,7 +87,7 @@ def main():
     # Entrainement du modele de regression
     # classification = mc.Classification(r_hp, method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
     #                                    n_estimators, max_features)
-    classification = mc.Classification(r_hp, method, n_neighbors, weights, leaf_size)
+    classification = mc.Classification(r_hp, method, hidden_layers_sizes, activation, alpha)
 
     classification.training(x_train, t_train)
 
@@ -128,6 +132,10 @@ def main():
         print(' - n_neighbors = ', classification.get_params('n_neighbors'))
         print(' - weights = ', classification.get_params('weights'))
         print(' - leaf_size = ', classification.get_params('leaf_size'))
+    if method == 'MLP':
+        print(' - hidden_layer_sizes = ', classification.get_params('hidden_layer_sizes'))
+        print(' - activation = ', classification.get_params('activation'))
+        print(' - alpha = ', classification.get_params('alpha'))
 
 
     print('')
