@@ -33,7 +33,7 @@ class Classification:
         self.classifier = None
 
         # Create classifier
-        if not r_hp > 0:
+        if not r_hp:
             if method == 'SVC':
                 self.kernel = params[0]
                 self.C = params[1]
@@ -66,7 +66,7 @@ class Classification:
                 self.activation = params[1]
                 self.alpha = params[2]
                 self.classifier = MLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes, activation=self.activation,
-                                                alpha=self.alpha, max_iter=500)
+                                                alpha=self.alpha, learning_rate_init=0.01)
 
         else:
             self.n_iter_rs = params[0]
@@ -85,7 +85,7 @@ class Classification:
             elif method == 'KNN':
                 self.classifier = KNeighborsClassifier()
             elif method == 'MLP':
-                self.classifier = MLPClassifier(max_iter=500)
+                self.classifier = MLPClassifier(learning_rate_init=0.01)
 
     def training(self, x_train, t_train):
         """
@@ -109,20 +109,20 @@ class Classification:
         # Find a first approximation of hyperparameters with a randomsearch
         param_dist = self.rand_distribution_hr()
         random_search = RandomizedSearchCV(self.classifier, refit=True, param_distributions=param_dist,
-                                           n_iter=3, cv=3)
+                                           n_iter=self.n_iter_rs, cv=self.cv_rs)
         if self.method not in ['LDA', 'GaussianNB']:
             random_search.fit(X, t)
 
         # Fine tune research with a gridsearch
         param_dist = self.grid_distribution_hr(random_search, 5, 5)
-        grid_search = GridSearchCV(self.classifier, param_grid=param_dist, cv=2)
+        grid_search = GridSearchCV(self.classifier, param_grid=param_dist, cv=self.cv_gs)
         grid_search.fit(X, t)
 
         # Set new classifier as the gridsearch, since he is fitted and can predict data
         self.set_params_hr(grid_search)
 
     def rand_distribution_hr(self):
-        # LDA et GaussianNB n'ont pas besoin de recherche préliminaire
+        # LDA and GaussianNB don't need hyperparameters research
         param_dist = {}
         if self.method == 'SVC':
             param_dist.update({'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
@@ -217,6 +217,7 @@ class Classification:
             self.activation = self.classifier.best_estimator_.activation
             self.alpha = self.classifier.best_estimator_.alpha
 
+
     def get_params(self, param):
         return getattr(self, param)
 
@@ -225,4 +226,4 @@ class Classification:
         """
 
         """
-        return 1 - accuracy_score(t, prediction, normalize=True)
+        return accuracy_score(t, prediction, normalize=True)

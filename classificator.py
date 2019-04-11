@@ -9,6 +9,7 @@ import sys
 import numpy as np
 import methods_classificator as mc
 import data_generator as gd
+from datetime import datetime as time
 
 
 def warning(erreur_test, erreur_apprentissage):
@@ -43,7 +44,7 @@ def main():
     # params = sys.argv[5:-1]
 
     # Method (SVC, LDA, GaussianNB, MultinomialNB)
-    method = 'MLP'
+    method = 'SVC'
 
     # Params for SVC
     kernel = 'rbf'
@@ -68,28 +69,35 @@ def main():
     hidden_layers_sizes = (50, 50)
     activation = 'tanh'
     alpha = 1e-3
+    learning_rate_init = 0.01
 
     # Data generator parameters
     normalization = False
     n_splits = int(10)
-    data_size = float(0.2)
+    data_size = float(0.4)
+    #data_size = float(0.4)
 
     # Hyper parameters research
     r_hp = True
-    n_iter_rs = int(3)
-    cv_rs = int(3)
-    cs_gs = int(2)
+    n_iter_rs = 3
+    cv_rs = 5
+    cs_gs = 2
 
     # Create data generator and generate training and testing data
     data_generator = gd.DataGenerator(n_splits, data_size, normalization)
     [x_train, t_train, x_test, t_test] = data_generator.generate_data()
 
     # Entrainement du modele de regression
-    # classification = mc.Classification(r_hp, method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
+    #classification = mc.Classification(r_hp, method, kernel, C, degree, coef0, gamma, solver, var_smoothing, alpha,
     #                                    n_estimators, max_features)
-    classification = mc.Classification(r_hp, method, hidden_layers_sizes, activation, alpha)
+    #classification = mc.Classification(r_hp, method, kernel, C, degree, coef0, gamma, solver)
+    classification = mc.Classification(r_hp, 'SVC', 3, 3, 3)
+    #classification = mc.Classification(r_hp, method, var_smoothing)
 
+    tStart = time.now()
     classification.training(x_train, t_train)
+    tEnd = time.now()
+    c = tEnd - tStart
 
     # Predictions sur les ensembles d'entrainement et de test
     predictions_train = classification.prediction(x_train)
@@ -108,6 +116,7 @@ def main():
         #predictions_test = max(min(predictions_test[i], 1 - 1e-15), 1e-15)
 
     print('%%%%% Classifier : ', method, ' %%%%%')
+    print('%%%%% Execution time :'+ str(c.seconds) + ' seconds' )
     if method == 'SVC':
         kernel = classification.get_params('kernel')
         print(' - kernel = ', kernel)
@@ -119,20 +128,20 @@ def main():
             print(' - gamma = ', '%.4f' % classification.get_params('gamma'))
         elif kernel == 'sigmoid':
             print(' - coef0 = ', '%.4f' % classification.get_params('coef0'))
-    if method == 'LDA':
+    elif method == 'LDA':
         print(' - solver = ', classification.get_params('solver'))
-    if method == 'GaussianNB':
+    elif method == 'GaussianNB':
         print(' - var_smoothing = ,', classification.get_params('v_smoothing'))
-    if method == 'MultinomialNB':
+    elif method == 'MultinomialNB':
         print(' - alpha = ', classification.get_params('alpha'))
-    if method == 'RF':
+    elif method == 'RF':
         print(' - n_estimators = ', classification.get_params('n_estimators'))
         print(' - max_features = ', classification.get_params('max_features'))
-    if method == 'KNN':
+    elif method == 'KNN':
         print(' - n_neighbors = ', classification.get_params('n_neighbors'))
         print(' - weights = ', classification.get_params('weights'))
         print(' - leaf_size = ', classification.get_params('leaf_size'))
-    if method == 'MLP':
+    elif method == 'MLP':
         print(' - hidden_layer_sizes = ', classification.get_params('hidden_layer_sizes'))
         print(' - activation = ', classification.get_params('activation'))
         print(' - alpha = ', classification.get_params('alpha'))
