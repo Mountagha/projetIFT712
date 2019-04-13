@@ -13,4 +13,10 @@ classification de données sur le dataset mentionné dans le titre. Les 6 métho
 ## Utilisation:
 Il suffit d'appeler le fichier classifier avec la méthode et les paramètres voulues
 exemple 
-`python3 classifier.py --method=SVC --kernel='rbf' ` 
+
+`python3 classifier.py --method=SVC --kernel='rbf' `
+
+## prérequis 
+* python3
+* pandas
+* sklearn 
