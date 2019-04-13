@@ -13,6 +13,8 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 class DataGenerator:
     def __init__(self, n_splits, data_size, norm):
+        self.train = None
+        self.test = None
         self.n_splits = n_splits
         self.data_size = data_size
         self.norm = norm
@@ -26,11 +28,14 @@ class DataGenerator:
         dir_path = os.path.dirname(os.path.abspath(__file__))
 
         # Read training and testing data sets
-        train = pd.read_csv(os.path.join(dir_path, 'train.csv'))
-        test = pd.read_csv(os.path.join(dir_path, 'test.csv'))
+        self.train = pd.read_csv(os.path.join(dir_path, '../data/train.csv'))
+        self.test = pd.read_csv(os.path.join(dir_path, '../data/test.csv'))
 
-        # Organize data sets
-        train, labels, test, test_ids, classes = self.encode(train, test)
+        # save original data for eventual later use
+        train = self.train
+        test  = self.test
+
+        train, labels, tests, test_ids, classes = self.encode(train, test)
 
         # Split data sets (data sets are too large (990 * data_size))
         sss = StratifiedShuffleSplit(n_splits=self.n_splits, test_size=self.data_size, random_state=20)
@@ -43,20 +48,23 @@ class DataGenerator:
             Normalizer().fit_transform(x_train)
             Normalizer().fit_transform(x_test)
 
-        return x_train, t_train, x_test, t_test
+        return x_train, t_train, x_test, t_test, tests, test_ids, classes
 
     def encode(self, train, test):
         """
         Swiss army knife function to organize data sets
         """
         # Initialize encoder from sklearn
+        train = self.train
+        test  = self.test
+
         le = LabelEncoder().fit(train.species)
 
         # Encode species strings
         labels = le.transform(train.species)
 
         # Save column names for submission
-        classes = list(le.classes_)
+        classes = list(le.classes_.shape)
 
         # Save test ids for submission
         test_ids = test.id

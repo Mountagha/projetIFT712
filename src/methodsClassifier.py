@@ -25,6 +25,9 @@ from sklearn.metrics import accuracy_score
 
 class Classification:
     def __init__(self, r_hp, method, *params):
+        """
+        initialize the method classifier with its appropriate attributes
+        """
         # Method to use and r_hp
         self.r_hp = r_hp
         self.method = method
@@ -41,7 +44,7 @@ class Classification:
                 self.coef0 = params[3]
                 self.gamma = params[4]
                 self.classifier = SVC(kernel=self.kernel, C=self.C, degree=self.degree, coef0=self.coef0,
-                                      gamma=self.gamma)
+                                      gamma=self.gamma,probabibility=True)
             elif method == 'LDA':
                 self.solver = params[0]
                 self.classifier = LinearDiscriminantAnalysis(solver=self.solver)
@@ -65,15 +68,17 @@ class Classification:
                 self.hidden_layer_sizes = params[0]
                 self.activation = params[1]
                 self.alpha = params[2]
+                self.learning_rate_init = params[3]
                 self.classifier = MLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes, activation=self.activation,
-                                                alpha=self.alpha, learning_rate_init=0.01)
+                                                alpha=self.alpha, learning_rate_init=self.learning_rate_init)
 
         else:
             self.n_iter_rs = params[0]
             self.cv_rs = params[1]
             self.cv_gs = params[2]
             if method == 'SVC':
-                self.classifier = SVC()
+                # without probabibility to true we cant save our data for submission
+                self.classifier = SVC(probabibility=True)
             elif method == 'LDA':
                 self.classifier = LinearDiscriminantAnalysis()
             elif method == 'GaussianNB':
@@ -89,24 +94,33 @@ class Classification:
 
     def training(self, x_train, t_train):
         """
-
+        Method used to train the choosen classifiers according the type of choosing training
+        wether with hyperparameters research or provided parameters
         """
         if self.r_hp:
             self.hyperparametre_research(x_train, t_train)
         else:
             self.classifier.fit(x_train, t_train)
 
-    def prediction(self, x_test):
+    def prediction(self, x_test, save=False):
         """
+        method used to predict output after training and eventually save results
+        """
+        if save:
+            predictions = self.classifier.predict_proba(x_test)
 
-        """
         return self.classifier.predict(x_test)
+
+
+
+
+
 
     def hyperparametre_research(self, X, t):
         """
-
+             Find a first approximation of hyperparameters with a randomsearch
         """
-        # Find a first approximation of hyperparameters with a randomsearch
+
         param_dist = self.rand_distribution_hr()
         random_search = RandomizedSearchCV(self.classifier, refit=True, param_distributions=param_dist,
                                            n_iter=self.n_iter_rs, cv=self.cv_rs)
@@ -194,6 +208,9 @@ class Classification:
         return param_dist
 
     def set_params_hr(self, clf):
+        """
+            set best parameters found to the classifiers accordingly
+        """
         self.classifier = clf
         if self.method == 'SVC':
             self.kernel = self.classifier.best_estimator_.kernel
@@ -219,11 +236,15 @@ class Classification:
 
 
     def get_params(self, param):
+        """
+        methods allowing to get parameters of an estimator(Classifier in our case)
+
+        """
         return getattr(self, param)
 
     @staticmethod
-    def error(t, prediction):
+    def accuracy(t, prediction):
         """
-
+        Method returning the accuracy of a Classifier
         """
         return accuracy_score(t, prediction, normalize=True)
